@@ -1,0 +1,154 @@
+Alors vous aurez pu remarquer que javascript est un langage orienté objet. Qu'avec un objet vous pouvez accéder aux attributs en faisant nomObjet.nomattribut
+
+En fait c'est presque vrai. Javascript est un langage qu'on dit "Orienté Prototype".
+parce que par défaut il ne fonctionne pas tout à fait comme les autres langages orientés objets. En javascript classiquement on ne déclare pas de classe de la même façon qu'en C++ par exemple. vous en avez des exemples avec les scènes de Phaser mais ce n'est pas la méthode la plus classiquement utilisée (au point où j'ai été surprise de trouver ça dans Phaser :slight_smile: ça existe mais c'est pas le plus courant )
+En javascript comme pour de nombreuses autres fonctionnalités, on va être capables de créer des objets "à la volée", directement sans avoir à déclarer de classe avant.
+En fait tout se base sur la définition d'un Constructeur. C'est la même notion qu'en C++.
+On va devoir définir une fonction Constructeur qui permet de créer les objets avec ensuite. Mais pour ça, on n'a pas besoin d'avoir formellement définie une classe comme en C++
+Syntaxe :
+
+function NomConstructeur(params){
+    this.attribut1 = blabla;
+}
+
+Si on prend l'exemple d'un Constructeur de Monstres, on pourrait avoir :
+
+function Monstre(pv, degats) {
+this._pv = pv;
+this._degats = degats;
+}
+
+Après avoir créé ce constructeur de Monstres, je peux m'en servir directement pour créer des monstres. Tous les monstres que je vais créer vont avoir ces attributs et être générés grâce au code de ce constructeur. Comme en C++.
+
+var slime = new Monstre(10, 2);
+
+
+Quand je dis que Javascript est orienté prototype c'est que tous les objets instanciés par un Constructeur vont l'être grâce au prototype de cet objet. Très concrètement ça va être visible dans la façon dont je peux déclarer des méthodes.
+Il y a plusieurs façons dont je peux déclarer des méthodes pour un objet/une classe
+
+
+Pour déclarer des méthodes donc, je peux le faire directement dans le constructeur 
+
+function Monstre(pv, degats) {
+    this._pv = pv;
+    this._degats = degats;
+    this.perdPV = function(ouille) { this.pv-=ouille; };
+}
+
+Cette façon de faire possède un certain désavantage c'est que la méthode est en fait re-créée à chaque fois que j'instancie un nouvel objet. Dans l'absolu c'est pas forcément grave mais on peut faire bcp mieux et + pratique
+Donc après avoir instancié mon slime avec le constructeur je peux dire
+
+Monstre.prototype.perdPv = function(nbr) {this.-pv -=nbr;};
+
+Et là le truc très performant c'est que ça va l'appliquer à tous les Monstres. 
+Même ceux qui ont déjà été créés l'attribut prototype existe pour tous les objets en Javascript
+
+(quand je dis "l'appliquer" je veux dire que ça créé la méthode pour tous les Monstres, libre ensuite de l'utiliser)
+Sans entrer dans les détails c'est la façon dont Javascript va gérer les objets. C'est en soi une singularité de Javascript. 
+C'est le seul langage que je connaisse qui gère les objets de cette façon. 
+La majorité des langages gère les objets de façon très similaire à C++. 
+Mais on le voit parce que Javascript est très très utilisé aussi.
+
+et du coup on récupère des caractéristiques de ce prototype dans l'attribut .prototype
+
+//Exemple avec les chatons
+
+function Chaton(nom) {
+ this._name = nom;
+ this._faim = 0;
+ this._ennui = 0;
+ this._fatigue = 0;
+}
+
+- Instanciation d'un Chaton :
+
+var premierChaton = new Chaton("Garfield");
+
+- Ajout d'une méthode au prototype des Chatons :
+
+
+Chaton.prototype.nomdelamethode = function(nomduparametre) {}
+
+Chaton.prototype.manger = function(calories) { 
+ this._faim-=calories; 
+ this._ennui+=10;
+this._fatigue+=50;
+}
+
+- maintenant si j'écris : 
+
+premierChaton.manger(20);
+
+ça va lancer directement la méthode manger que j'ai créé juste au dessus, avec 20 calories en paramètres
+et ça va donc avoir des effets sur les jauges du premierChaton
+
+
+
+
+Alors maintenant vous pouvez imaginer toute la puissance de cette façon de coder utilisée avec Phaser.
+Cela signifie par exemple quand dans la méthode de perte de pv d'un monstre, vous pouvez aussi inclure l'animation de dégats. Ou même changer son animation/sprite.
+Cela signifie en fait que vous pouvez "ranger" tous les effets de chaque action dans la méthode correspondante, au sein de l'objet
+
+Ici avec l'exemple du TP Petits animaux mignons qu'on a fait en C++, avec javascript / phaser vous avez vraiment tout ce qu'il vous faut pour faire un jeu de tamagotchi avec des graphismes de votre conception (et du plus bel effet j'en suis sûre)
+
+Alors, avec ce que je vous ai dit jusqu'à présent, oui, ça peut, carrément.
+c'est même une excellente façon de procéder
+Dans ton exemple Sprite est encapsulé dans ta classe. Donc conceptuellement on considère que le Chaton possède un sprite mais qu'il a aussi d'autres caractéristiques. ça me semble tout à fait valable dans l'esprit de l'orienté objet
+Pour prendre un exemple, vous pouvez écrire dans la console (F12), ligne par ligne, les lignes suivantes.
+
+function Monstre(pv, degats, nom){this.nom = nom; this.pv=pv; this.degats=degats;};
+
+var monstre1 = new Monstre(10, 1, "Slime vert");
+Monstre.prototype.perdPV = function(nbr) { this.pv -= nbr; if(this.pv<0) {console.log("Le "+this.nom+" est mort !"); } }
+
+Et ensuite essayer d'écrire 
+monstre1.perdPV(11);
+
+L'Héritage des Attributs se fait ainsi : 
+
+function ClasseFille(paramsMere, paramsFille) {
+   ClasseMere.call(paramsMere);
+   this.attribut1 = paramFille1;
+}
+
+Par exemple, mettons que je définisse une classe Animal de cette façon
+
+function Animal(pv, degats){ this._pv=pv; this._degats=degats;}
+
+alors je pourrai créer le Constructeur d'un Chaton qui hérite des attributs de Animal, de cette façon :
+
+ function Chaton(pv, degats, ronronnement){
+ Animal.call(pv, degats);
+ this._ronron = ronronnement;
+}
+
+Dans cet exemple ci-dessus, _ronron est un attribut spécifique aux Chatons. Les Animaux n'ont pas de ronron. Les Chatons, si.
+(et les Chatons sont des Animaux !)
+Pour hériter des méthodes, il faut ensuite lui dire de reprendre le prototype de la classe mère. On fait ça de cette façon :
+ClasseFille.prototype = Object.create(ClasseMere.prototype);
+ClasseFille.prototype.constructor = ClasseFille;
+
+On y va pour appliquer à notre exemple :
+Chaton.prototype = Object.create(Animal.prototype);
+Chaton.prototype.constructor = Chaton;
+
+Une fois qu'on a écrit ça, quand on créé un Chaton, il aura toutes les méthodes d'un Animal. + celles spécifiques aux Chatons qu'on pourra ajouter ensuite au prototype (comme précédemment).	
+
+Très concrètement cela signifie que quand vous créez un personnage sur Phaser, vous pouvez le faire hériter du GameObject Sprite.
+https://photonstorm.github.io/phaser3-docs/Phaser.GameObjects.Sprite.html
+Vous obtenez alors un objet qui possède toutes les caractéristiques d'un sprite, et auquel vous pouvez ajouter les vôtres (des points de vie, par exemple...).
+
+Donc voilà y'a deux possibilités différentes pour mettre en scène un personnage dans Phaser : 
+
+- de considérer (comme Damien le faisait tout à l'heure) qu'un personnage possède un gameObject sprite, qui est l'un de ses attributs (encapsulation)
+
+- de considérer qu'un personnage est un sprite avec des caractéristiques particulières. Cela possède l'énorme avantage de pouvoir directement utiliser les méthodes héritées du gameObject Sprite sur le personnage. Notamment par exemple de faire monPerso.destroy(true) si ses aventures deviennent fatales
+
+
+
+
+
+
+
+
+
